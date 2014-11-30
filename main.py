@@ -1,6 +1,8 @@
 import os
 import time
 from time import strftime
+from datetime import datetime
+from datetime import timedelta
 import re
 import csv
 import collections
@@ -17,14 +19,18 @@ def plot_day():
 
    for file in files:
       f = open(file, 'r')
-      creation_time = time.strftime("%d.%m.%Y %H:%M", time.localtime(os.path.getmtime(file)))
-      creation_day = time.strftime("%d.%m.%Y", time.localtime(os.path.getmtime(file)))
 
       pings = []      
-
+      datestring = f.readline()
+      creation_date = datetime.strptime(datestring[:-5], "%a %b %d %H:%M:%S %Z %Y")
+      
+      end_time = creation_date + timedelta(0, 600)
+      
+      creation_time = creation_date.strftime("%H:%M") + "-" + end_time.strftime("%H:%M")
+      creation_day = creation_date.strftime("%d.%m.%Y") 
+         
       for line in f:
-         l = f.readline()
-         m = re.search('(?<=time=)\d+[\.\d]*', l)
+         m = re.search('(?<=time=)\d+[\.\d]*', line)
 
          if(m != None):
             pings.append(float(m.group(0)))
@@ -34,11 +40,6 @@ def plot_day():
       days[creation_day][creation_time] = pings
 
    results = OrderedDict(sorted(results.items(), key=lambda t: t[0]))
-
-   #with open('mycsvfile.csv', 'w') as f:  # Just use 'w' mode in 3.x
-   #   w = csv.DictWriter(f, results.keys())
-   #   w.writeheader()
-   #   w.writerow(results)  
 
    days = OrderedDict(sorted(days.items(), key=lambda t: t[0]))
    for res in days.keys():
@@ -57,6 +58,7 @@ def plot_day():
 
       xtickNames = plt.setp(ax, xticklabels=keys)
       plt.setp(xtickNames, rotation=90, fontsize=8)
+      ax.set_ylim(0, 400)
       ax.set_title(res)
       ax.boxplot(data)
       #plt.show()
@@ -76,7 +78,6 @@ def main():
       pings = []      
 
       for line in f:
-         l = f.readline()
          m = re.search('(?<=time=)\d+[\.\d]*', l)
 
          if(m != None):
